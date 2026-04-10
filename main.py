@@ -9,7 +9,7 @@ import aiofiles
 import aiohttp
 from fastapi import FastAPI, HTTPException, Request, File, UploadFile, Form, Response
 from fastapi.responses import FileResponse, JSONResponse
-from config import ADMIN_PASSWORD, MAX_FILE_SIZE, STORAGE_CHANNEL, TMDB_API_KEY
+from config import ADMIN_PASSWORD, MAX_FILE_SIZE, STORAGE_CHANNEL, TMDB_API_KEY, TMDB_ACCESS_TOKEN
 from utils.clients import initialize_clients
 from utils.directoryHandler import getRandomID
 from utils.extra import auto_ping_website, convert_class_to_dict, reset_cache_dir
@@ -393,7 +393,8 @@ async def get_thumbnail(file_id: int):
         raise HTTPException(status_code=400, detail="Invalid file_id")
     if thumb_path.exists():
         return FileResponse(str(thumb_path), media_type="image/jpeg")
-    raise HTTPException(status_code=404, detail="Thumbnail not available")
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="/static/assets/file-icon.svg", status_code=302)
 
 
 # ── TMDB Proxy Endpoints ────────────────────────────────────────────────────
@@ -401,16 +402,35 @@ async def get_thumbnail(file_id: int):
 TMDB_BASE = "https://api.themoviedb.org/3"
 
 
+def _tmdb_configured():
+    return bool(TMDB_ACCESS_TOKEN or TMDB_API_KEY)
+
+
+def _tmdb_request_kwargs(params: dict) -> dict:
+    """Return aiohttp request kwargs with proper auth headers or query params."""
+    if TMDB_ACCESS_TOKEN:
+        return {"headers": {"Authorization": f"Bearer {TMDB_ACCESS_TOKEN}"}, "params": params}
+    params["api_key"] = TMDB_API_KEY
+    return {"params": params}
+
+
+@app.get("/robots.txt")
+async def robots_txt():
+    content = "User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /file\nDisallow: /thumbnail\n"
+    return Response(content=content, media_type="text/plain")
+
+
 @app.get("/api/tmdb/search")
 async def tmdb_search(query: str, page: int = 1):
-    if not TMDB_API_KEY:
+    if not _tmdb_configured():
         raise HTTPException(status_code=503, detail="TMDB_API_KEY not configured")
     if not query or len(query) > 200:
         raise HTTPException(status_code=400, detail="Invalid query")
     url = f"{TMDB_BASE}/search/multi"
-    params = {"api_key": TMDB_API_KEY, "query": query[:200], "page": page, "include_adult": "false"}
+    params = {"query": query[:200], "page": page, "include_adult": "false"}
+    kwargs = _tmdb_request_kwargs(params)
     async with aiohttp.ClientSession() as session:
-        async with session.get(url, params=params) as resp:
+        async with session.get(url, **kwargs) as resp:
             if resp.status != 200:
                 raise HTTPException(status_code=resp.status, detail="TMDB request failed")
             return JSONResponse(await resp.json())
@@ -418,12 +438,12 @@ async def tmdb_search(query: str, page: int = 1):
 
 @app.get("/api/tmdb/trending")
 async def tmdb_trending(media_type: str = "all", time_window: str = "week"):
-    if not TMDB_API_KEY:
+    if not _tmdb_configured():
         raise HTTPException(status_code=503, detail="TMDB_API_KEY not configured")
     url = f"{TMDB_BASE}/trending/{media_type}/{time_window}"
-    params = {"api_key": TMDB_API_KEY}
+    kwargs = _tmdb_request_kwargs({})
     async with aiohttp.ClientSession() as session:
-        async with session.get(url, params=params) as resp:
+        async with session.get(url, **kwargs) as resp:
             if resp.status != 200:
                 raise HTTPException(status_code=resp.status, detail="TMDB request failed")
             return JSONResponse(await resp.json())
@@ -431,12 +451,12 @@ async def tmdb_trending(media_type: str = "all", time_window: str = "week"):
 
 @app.get("/api/tmdb/movie/{movie_id}")
 async def tmdb_movie_details(movie_id: int):
-    if not TMDB_API_KEY:
+    if not _tmdb_configured():
         raise HTTPException(status_code=503, detail="TMDB_API_KEY not configured")
     url = f"{TMDB_BASE}/movie/{movie_id}"
-    params = {"api_key": TMDB_API_KEY, "append_to_response": "videos,credits"}
+    kwargs = _tmdb_request_kwargs({"append_to_response": "videos,credits"})
     async with aiohttp.ClientSession() as session:
-        async with session.get(url, params=params) as resp:
+        async with session.get(url, **kwargs) as resp:
             if resp.status != 200:
                 raise HTTPException(status_code=resp.status, detail="TMDB request failed")
             return JSONResponse(await resp.json())
@@ -444,12 +464,58 @@ async def tmdb_movie_details(movie_id: int):
 
 @app.get("/api/tmdb/tv/{tv_id}")
 async def tmdb_tv_details(tv_id: int):
-    if not TMDB_API_KEY:
+    if not _tmdb_configured():
         raise HTTPException(status_code=503, detail="TMDB_API_KEY not configured")
     url = f"{TMDB_BASE}/tv/{tv_id}"
-    params = {"api_key": TMDB_API_KEY, "append_to_response": "videos,credits"}
+    kwargs = _tmdb_request_kwargs({"append_to_response": "videos,credits"})
     async with aiohttp.ClientSession() as session:
-        async with session.get(url, params=params) as resp:
+        async with session.get(url, **kwargs) as resp:
             if resp.status != 200:
                 raise HTTPException(status_code=resp.status, detail="TMDB request failed")
             return JSONResponse(await resp.json())
+
+
+@app.post("/api/refreshThumbnails")
+async def refresh_thumbnails(request: Request):
+    from utils.directoryHandler import DRIVE_DATA
+    from utils.clients import get_client, has_clients
+    from utils.uploader import extract_thumbnail, THUMBNAIL_DIR
+
+    data = await request.json()
+    if data.get("password") != ADMIN_PASSWORD:
+        return JSONResponse({"status": "Invalid password"})
+
+    if not has_clients():
+        return JSONResponse({"status": "Telegram clients not available"})
+
+    def collect_video_files(folder):
+        files = []
+        for item in folder.contents.values():
+            if item.type == "file":
+                mime = getattr(item, "mime_type", "")
+                if mime.startswith("video/"):
+                    thumb_path = THUMBNAIL_DIR / f"{int(item.file_id)}.jpg"
+                    if not thumb_path.exists():
+                        files.append(item)
+            elif item.type == "folder":
+                files.extend(collect_video_files(item))
+        return files
+
+    root = DRIVE_DATA.get_directory("/")
+    video_files = collect_video_files(root)
+    updated = 0
+    errors = 0
+
+    client = get_client()
+    for file in video_files:
+        try:
+            msg = await client.get_messages(STORAGE_CHANNEL, file.file_id)
+            if msg:
+                success = await extract_thumbnail(client, msg, file.file_id)
+                if success:
+                    updated += 1
+        except Exception as e:
+            logger.warning(f"refreshThumbnails: failed for file_id {file.file_id}: {e}")
+            errors += 1
+
+    return JSONResponse({"status": "ok", "updated": updated, "errors": errors, "total": len(video_files)})

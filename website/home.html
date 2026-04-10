@@ -5,10 +5,27 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>TG Drive</title>
-    <link rel="stylesheet" href="static/home.css?v=4" />
+    <meta name="description" content="TG Drive - Store and stream files on Telegram. A fast, free cloud storage powered by Telegram." />
+    <meta name="keywords" content="TG Drive, Telegram storage, cloud drive, file storage, video streaming" />
+    <meta name="author" content="akay.is-a.dev" />
+    <meta name="robots" content="index, follow" />
+    <!-- Geo tags -->
+    <meta name="geo.region" content="IN" />
+    <meta name="geo.placename" content="India" />
+    <!-- Open Graph -->
+    <meta property="og:title" content="TG Drive" />
+    <meta property="og:description" content="Store and stream files on Telegram. Fast, free cloud storage." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://akay.is-a.dev" />
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="TG Drive" />
+    <meta name="twitter:description" content="Store and stream files on Telegram." />
+    <link rel="stylesheet" href="static/home.css?v=5" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 </head>
 
 <body>
@@ -27,7 +44,7 @@
             </div>
 
             <button id="new-button" class="new-button">
-                <img src="static/assets/plus-icon.svg" alt="New" />
+                <i class="fa-solid fa-plus" style="margin-right:10px;font-size:16px"></i>
                 New
             </button>
 
@@ -54,11 +71,12 @@
                 <a class="selected-item" href="/?path=/"><img src="static/assets/home-icon.svg" alt="Home" />Home</a>
                 <a class="unselected-item" href="/?path=/trash"><img src="static/assets/trash-icon.svg" alt="Trash" />Trash</a>
                 <a class="unselected-item" id="tmdb-sidebar-btn" href="#" onclick="openTmdbPanel(); return false;">
-                    <svg xmlns="http://www.w3.org/2000/svg" height="18" viewBox="0 0 24 24" width="18" style="flex-shrink:0" fill="currentColor">
-                        <path d="M18 3v2h-2V3H8v2H6V3H4v18h2v-2h2v2h8v-2h2v2h2V3h-2zM8 17H6v-2h2v2zm0-4H6v-2h2v2zm0-4H6V7h2v2zm10 8h-2v-2h2v2zm0-4h-2v-2h2v2zm0-4h-2V7h2v2z"/>
-                    </svg>
+                    <i class="fa-solid fa-film" style="width:18px;height:18px;font-size:16px;flex-shrink:0"></i>
                     Movies / IMDB
                 </a>
+            </div>
+            <div class="sidebar-credit">
+                <i class="fa-solid fa-heart"></i> by <a href="https://akay.is-a.dev" target="_blank" rel="noopener">akay.is-a.dev</a>
             </div>
         </div>
 
@@ -260,12 +278,12 @@
     <div id="more-options-portal"></div>
 
     <!-- Scripts -->
-    <script src="static/js/extra.js?v=4"></script>
-    <script src="static/js/apiHandler.js?v=4"></script>
-    <script src="static/js/sidebar.js?v=4"></script>
-    <script src="static/js/fileClickHandler.js?v=4"></script>
-    <script src="static/js/main.js?v=4"></script>
-    <script src="static/js/tmdb.js?v=4"></script>
+    <script src="static/js/extra.js?v=5"></script>
+    <script src="static/js/apiHandler.js?v=5"></script>
+    <script src="static/js/sidebar.js?v=5"></script>
+    <script src="static/js/fileClickHandler.js?v=5"></script>
+    <script src="static/js/main.js?v=5"></script>
+    <script src="static/js/tmdb.js?v=5"></script>
 </body>
 
 </html>
