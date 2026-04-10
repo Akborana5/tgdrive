@@ -3,6 +3,21 @@
    Grid/List view · Sort · Skeleton · Loading bar
    ========================================================= */
 
+// ── Constants ─────────────────────────────────────────────
+const SKELETON_TIMEOUT_MS = 12000;
+
+const FILE_TYPE_EXTENSIONS = {
+    image:   ['jpg','jpeg','png','gif','webp','bmp','svg','ico','avif','tiff'],
+    video:   ['mp4','mkv','avi','mov','webm','ts','flv','wmv','ogv','m4v','3gp'],
+    audio:   ['mp3','wav','flac','aac','ogg','m4a','opus','wma','alac'],
+    pdf:     ['pdf'],
+    archive: ['zip','rar','7z','tar','gz','bz2','xz','lz4','zst'],
+    code:    ['js','ts','py','java','c','cpp','h','cs','go','rs','php','html','css',
+              'json','xml','yaml','yml','sh','bash','sql','kt','swift','dart','rb',
+              'lua','vue','jsx','tsx','scss','sass','less','r','m'],
+    doc:     ['doc','docx','xls','xlsx','ppt','pptx','odt','ods','odp','txt','rtf','csv','md'],
+};
+
 // ── State ────────────────────────────────────────────────
 let currentDirectoryData = null;
 let currentView      = localStorage.getItem('view')      || 'list';
@@ -87,7 +102,7 @@ function showSkeletons() {
     skCont.innerHTML = html;
     skCont.style.display = 'block';
     if (_skelTimer) clearTimeout(_skelTimer);
-    _skelTimer = setTimeout(hideSkeletons, 12000);
+    _skelTimer = setTimeout(hideSkeletons, SKELETON_TIMEOUT_MS);
 }
 
 function hideSkeletons() {
@@ -109,21 +124,9 @@ function hideSkeletons() {
 // ── File-type helpers ─────────────────────────────────────
 function getFileType(name) {
     const ext = (name || '').toLowerCase().split('.').pop();
-    if (['jpg','jpeg','png','gif','webp','bmp','svg','ico','avif','tiff'].includes(ext))
-        return 'image';
-    if (['mp4','mkv','avi','mov','webm','ts','flv','wmv','ogv','m4v','3gp'].includes(ext))
-        return 'video';
-    if (['mp3','wav','flac','aac','ogg','m4a','opus','wma','alac'].includes(ext))
-        return 'audio';
-    if (ext === 'pdf') return 'pdf';
-    if (['zip','rar','7z','tar','gz','bz2','xz','lz4','zst'].includes(ext))
-        return 'archive';
-    if (['js','ts','py','java','c','cpp','h','cs','go','rs','php','html','css','json',
-         'xml','yaml','yml','sh','bash','sql','kt','swift','dart','rb','lua','vue',
-         'jsx','tsx','scss','sass','less','r','m'].includes(ext))
-        return 'code';
-    if (['doc','docx','xls','xlsx','ppt','pptx','odt','ods','odp','txt','rtf','csv','md'].includes(ext))
-        return 'doc';
+    for (const [type, exts] of Object.entries(FILE_TYPE_EXTENSIONS)) {
+        if (exts.includes(ext)) return type;
+    }
     return 'other';
 }
 

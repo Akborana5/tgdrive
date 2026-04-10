@@ -45,13 +45,14 @@
     --sk-shine:      #f5f5ff;
 
     /* Layout */
-    --sidebar-w: 260px;
-    --header-h:  64px;
-    --radius-sm:  8px;
-    --radius-md: 14px;
-    --radius-lg: 22px;
-    --radius-xl: 32px;
-    --transition: 0.25s ease;
+    --sidebar-w:    260px;
+    --header-h:      64px;
+    --radius-sm:      8px;
+    --radius-md:     14px;
+    --radius-lg:     22px;
+    --radius-xl:     32px;
+    --transition:    0.25s ease;
+    --shimmer-w:     400px;
 }
 
 body.dark-mode {
@@ -941,8 +942,8 @@ body {
    SKELETON LOADERS
    ========================================================= */
 @keyframes shimmer {
-    0%   { background-position: -400px 0; }
-    100% { background-position: calc(400px + 100%) 0; }
+    0%   { background-position: calc(-1 * var(--shimmer-w)) 0; }
+    100% { background-position: calc(var(--shimmer-w) + 100%) 0; }
 }
 
 .skeleton-pulse {
@@ -952,7 +953,7 @@ body {
         var(--sk-shine) 50%,
         var(--sk-base) 75%
     );
-    background-size: 400px 100%;
+    background-size: var(--shimmer-w) 100%;
     animation: shimmer 1.5s ease-in-out infinite;
     border-radius: 6px;
 }
