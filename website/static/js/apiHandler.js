@@ -345,3 +345,20 @@ async function Start_URL_Upload() {
 }
 
 // URL Uploader End
+
+// Thumbnail Refresh
+
+async function triggerThumbnailRefresh() {
+    try {
+        const json = await postJson('/api/refreshThumbnails', {})
+        if (json.status === 'ok') {
+            alert('Thumbnail refresh started in the background.\nMissing thumbnails will appear after a few moments.')
+        } else {
+            alert('Thumbnail refresh failed: ' + json.status)
+        }
+    } catch (err) {
+        alert('Error triggering thumbnail refresh: ' + err)
+    }
+}
+
+// Thumbnail Refresh End

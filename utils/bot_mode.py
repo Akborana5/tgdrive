@@ -175,6 +175,13 @@ async def file_handler(client: Client, message: Message):
         file.file_size,
     )
 
+    # Try to extract and cache thumbnail in background (best-effort)
+    from utils.uploader import extract_thumbnail
+    try:
+        await extract_thumbnail(client, copied_message, copied_message.id)
+    except Exception as e:
+        logger.info(f"Thumbnail extraction skipped for {file.file_name}: {e}")
+
     await message.reply_text(
         f"""✅ File Uploaded Successfully To Your TG Drive Website
                              

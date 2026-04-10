@@ -3,6 +3,19 @@
    Grid/List view · Sort · Skeleton · Loading bar
    ========================================================= */
 
+// ── Thumbnail fallback ────────────────────────────────────
+function handleThumbError(img) {
+    const parent = img.parentElement;
+    if (!parent) return;
+    const emoji = parent.getAttribute('data-fallback-emoji') || '📄';
+    const ext   = parent.getAttribute('data-fallback-ext')   || '';
+    // Restore gradient background and fallback content
+    parent.style.padding  = '';
+    parent.style.overflow = '';
+    img.remove();
+    parent.innerHTML = `<span class="card-file-emoji">${emoji}</span><span class="card-ext">${ext}</span>`;
+}
+
 // ── Constants ─────────────────────────────────────────────
 const SKELETON_TIMEOUT_MS = 12000;
 
@@ -255,7 +268,7 @@ function renderGridView(sorted, isTrash) {
                 thumbHtml = `<div class="card-thumb file-thumb type-${fileType}" style="padding:0;overflow:hidden"
                          data-fallback-emoji="${emoji}" data-fallback-ext="${ext}">
                     <img src="/thumbnail?file_id=${item.file_id}" class="card-thumb-img" loading="lazy"
-                         data-fallback-type="${fileType}" />
+                         data-fallback-type="${fileType}" onerror="handleThumbError(this)" />
                 </div>`;
             } else {
                 thumbHtml = `<div class="card-thumb file-thumb type-${fileType}">

@@ -35,6 +35,9 @@ async def lifespan(app: FastAPI):
         await initDriveDataWithoutClients()
         logger.warning("✅ Website is running in OFFLINE MODE - Telegram features are disabled")
         logger.info("✅ Website UI is available - File operations requiring Telegram will show errors")
+    else:
+        # Start background thumbnail refresh for files uploaded before thumbnail support
+        asyncio.create_task(refresh_missing_thumbnails())
 
     # Start the website auto ping task
     asyncio.create_task(auto_ping_website())
@@ -376,6 +379,86 @@ async def getFolderShareAuth(request: Request):
         return JSONResponse({"status": "ok", "auth": auth})
     except:
         return JSONResponse({"status": "not found"})
+
+
+# ── Thumbnail Refresh ───────────────────────────────────────────────────────
+
+async def refresh_missing_thumbnails():
+    """Background task: iterate all drive files and fetch thumbnails that are not yet cached."""
+    # Small delay so the app finishes startup before we start crawling
+    await asyncio.sleep(10)
+
+    from utils.directoryHandler import DRIVE_DATA
+    from utils.clients import get_client
+    from utils.uploader import extract_thumbnail
+
+    if DRIVE_DATA is None:
+        logger.warning("refresh_missing_thumbnails: DRIVE_DATA not ready, skipping.")
+        return
+
+    def collect_files(folder):
+        files = []
+        for item in folder.contents.values():
+            if item.type == "file":
+                files.append(item)
+            elif item.type == "folder":
+                files.extend(collect_files(item))
+        return files
+
+    try:
+        root_dir = DRIVE_DATA.get_directory("/")
+        all_files = collect_files(root_dir)
+    except Exception as e:
+        logger.error(f"refresh_missing_thumbnails: failed to traverse drive data: {e}")
+        return
+
+    missing = [f for f in all_files if not (THUMBNAIL_DIR / f"{f.file_id}.jpg").exists()]
+
+    if not missing:
+        logger.info("refresh_missing_thumbnails: all files already have thumbnails cached.")
+        return
+
+    logger.info(f"refresh_missing_thumbnails: fetching thumbnails for {len(missing)} file(s).")
+
+    try:
+        client = get_client()
+    except Exception as e:
+        logger.error(f"refresh_missing_thumbnails: no client available: {e}")
+        return
+
+    refreshed = 0
+    for file in missing:
+        try:
+            msg = await client.get_messages(STORAGE_CHANNEL, file.file_id)
+            if msg and not msg.empty:
+                success = await extract_thumbnail(client, msg, file.file_id)
+                if success:
+                    refreshed += 1
+        except Exception as e:
+            logger.info(f"refresh_missing_thumbnails: skipped file_id {file.file_id}: {e}")
+        # Small delay to avoid hitting Telegram rate limits
+        await asyncio.sleep(0.3)
+
+    logger.info(
+        f"refresh_missing_thumbnails: done. {refreshed}/{len(missing)} thumbnails refreshed."
+    )
+
+
+@app.post("/api/refreshThumbnails")
+async def api_refresh_thumbnails(request: Request):
+    """Admin endpoint to manually trigger a background thumbnail refresh."""
+    from utils.clients import has_clients
+
+    data = await request.json()
+
+    if data["password"] != ADMIN_PASSWORD:
+        return JSONResponse({"status": "Invalid password"})
+
+    if not has_clients():
+        return JSONResponse({"status": "Telegram clients not available - Service running in offline mode"})
+
+    asyncio.create_task(refresh_missing_thumbnails())
+    return JSONResponse({"status": "ok", "message": "Thumbnail refresh started in background"})
 
 
 # ── Thumbnail Endpoint ──────────────────────────────────────────────────────
