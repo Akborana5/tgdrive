@@ -35,8 +35,10 @@ function closeNewUploadFocus() {
 document.getElementById('new-upload-focus').addEventListener('blur', closeNewUploadFocus);
 document.getElementById('new-upload-focus').addEventListener('focusout', closeNewUploadFocus);
 
-document.getElementById('file-upload-btn').addEventListener('click', () => {
-    document.getElementById('fileInput').click()
+document.getElementById('file-upload-btn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    document.getElementById('fileInput').click();
 });
 
 // New File Upload End

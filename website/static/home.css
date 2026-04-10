@@ -1551,3 +1551,22 @@ button, a, .new-button, .more-btn, .card-more-btn,
 .tmdb-tab, .tmdb-card, .tmdb-trailer-btn, .tmdb-detail-close, .tmdb-trailer-close-btn {
     touch-action: manipulation;
 }
+
+
+/* =========================================================
+   SIDEBAR CREDIT
+   ========================================================= */
+.sidebar-credit {
+    margin-top: auto;
+    padding: 14px 16px;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-align: center;
+    width: 100%;
+}
+.sidebar-credit a {
+    color: var(--accent);
+    text-decoration: none;
+}
+.sidebar-credit a:hover { text-decoration: underline; }
+.sidebar-credit .fa-heart { color: #ec4899; }

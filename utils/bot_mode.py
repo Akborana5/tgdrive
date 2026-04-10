@@ -159,29 +159,41 @@ async def current_folder_handler(client: Client, message: Message):
 async def file_handler(client: Client, message: Message):
     global BOT_MODE, DRIVE_DATA
 
-    copied_message = await message.copy(config.STORAGE_CHANNEL)
-    file = (
-        copied_message.document
-        or copied_message.video
-        or copied_message.audio
-        or copied_message.photo
-        or copied_message.sticker
-    )
+    try:
+        copied_message = await message.copy(config.STORAGE_CHANNEL)
+    except Exception as e:
+        logger.error(f"file_handler: failed to copy message to storage channel: {e}")
+        await message.reply_text(f"❌ Failed to copy file to storage channel: {e}")
+        return
 
-    DRIVE_DATA.new_file(
-        BOT_MODE.current_folder,
-        file.file_name,
-        copied_message.id,
-        file.file_size,
-    )
+    try:
+        file = (
+            copied_message.document
+            or copied_message.video
+            or copied_message.audio
+            or copied_message.photo
+            or copied_message.sticker
+        )
 
-    await message.reply_text(
-        f"""✅ File Uploaded Successfully To Your TG Drive Website
+        file_name = getattr(file, "file_name", None) or getattr(file, "file_unique_id", "unknown")
+
+        DRIVE_DATA.new_file(
+            BOT_MODE.current_folder,
+            file_name,
+            copied_message.id,
+            file.file_size,
+        )
+
+        await message.reply_text(
+            f"""✅ File Uploaded Successfully To Your TG Drive Website
                              
-**File Name:** {file.file_name}
+**File Name:** {file_name}
 **Folder:** {BOT_MODE.current_folder_name}
 """
-    )
+        )
+    except Exception as e:
+        logger.error(f"file_handler: failed to process uploaded file: {e}")
+        await message.reply_text(f"❌ File copied to Telegram but failed to register in drive: {e}")
 
 
 async def start_bot_mode(d, b):
