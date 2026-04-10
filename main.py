@@ -451,7 +451,7 @@ async def api_refresh_thumbnails(request: Request):
 
     data = await request.json()
 
-    if data["password"] != ADMIN_PASSWORD:
+    if data.get("password") != ADMIN_PASSWORD:
         return JSONResponse({"status": "Invalid password"})
 
     if not has_clients():
