@@ -120,6 +120,8 @@ function removeSlash(text) {
 
 // ── Refresh Thumbnails Modal ────────────────────────────────────────────────
 
+const REFRESH_THUMB_POLL_INTERVAL_MS = 2000;
+
 function openRefreshThumbnailsModal() {
     document.getElementById('refresh-thumb-progress-wrap').style.display = 'none';
     document.getElementById('refresh-thumb-start').disabled = false;
@@ -200,5 +202,5 @@ document.getElementById('refresh-thumb-start').addEventListener('click', async (
         } catch (e) {
             console.error('Error polling thumbnail refresh progress:', e);
         }
-    }, 2000);
+    }, REFRESH_THUMB_POLL_INTERVAL_MS);
 });

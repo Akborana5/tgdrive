@@ -407,6 +407,9 @@ async def api_refresh_thumbnails(request: Request):
 
     data = await request.json()
 
+    if "password" not in data:
+        return JSONResponse({"status": "Invalid password"})
+
     if data["password"] != ADMIN_PASSWORD:
         return JSONResponse({"status": "Invalid password"})
 
@@ -418,7 +421,6 @@ async def api_refresh_thumbnails(request: Request):
 
     asyncio.create_task(refresh_all_thumbnails())
     return JSONResponse({"status": "ok", "message": "Thumbnail refresh started"})
-
 
 @app.get("/api/refreshThumbnailsProgress")
 async def api_refresh_thumbnails_progress():

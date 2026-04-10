@@ -20,6 +20,9 @@ THUMBNAIL_REFRESH_PROGRESS = {"status": "idle", "processed": 0, "total": 0, "suc
 THUMBNAIL_DIR = Path("./thumbnails")
 THUMBNAIL_DIR.mkdir(parents=True, exist_ok=True)
 
+# Delay between Telegram requests during thumbnail refresh (seconds)
+_THUMBNAIL_REFRESH_DELAY = 0.5
+
 
 async def extract_thumbnail(client: Client, message: Message, file_msg_id: int) -> bool:
     """Try to extract a thumbnail from a Telegram message and save to disk.
@@ -186,13 +189,13 @@ async def refresh_all_thumbnails():
             else:
                 THUMBNAIL_REFRESH_PROGRESS["failed"] += 1
         except Exception as e:
-            logger.info(f"Failed to refresh thumbnail for file_id {file.file_id}: {e}")
+            logger.warning(f"Failed to refresh thumbnail for file_id {file.file_id}: {e}")
             THUMBNAIL_REFRESH_PROGRESS["failed"] += 1
         finally:
             THUMBNAIL_REFRESH_PROGRESS["processed"] += 1
 
         # Small delay between requests to avoid Telegram rate limits
-        await asyncio.sleep(0.5)
+        await asyncio.sleep(_THUMBNAIL_REFRESH_DELAY)
 
     THUMBNAIL_REFRESH_PROGRESS["status"] = "completed"
     logger.info(
