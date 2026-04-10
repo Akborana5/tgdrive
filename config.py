@@ -68,6 +68,10 @@ SLEEP_THRESHOLD = int(os.getenv("SLEEP_THRESHOLD", 60))  # Default to 60 seconds
 WEBSITE_URL = os.getenv("WEBSITE_URL", None)
 
 
+# TMDB API Key for the Movies/TV browser feature
+# Get your free API key from https://www.themoviedb.org/settings/api
+TMDB_API_KEY = os.getenv("TMDB_API_KEY", "")
+
 # For Using TG Drive's Bot Mode
 
 # Main Bot Token for TG Drive's Bot Mode

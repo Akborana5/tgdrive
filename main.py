@@ -6,14 +6,15 @@ import asyncio
 from pathlib import Path
 from contextlib import asynccontextmanager
 import aiofiles
+import aiohttp
 from fastapi import FastAPI, HTTPException, Request, File, UploadFile, Form, Response
 from fastapi.responses import FileResponse, JSONResponse
-from config import ADMIN_PASSWORD, MAX_FILE_SIZE, STORAGE_CHANNEL
+from config import ADMIN_PASSWORD, MAX_FILE_SIZE, STORAGE_CHANNEL, TMDB_API_KEY
 from utils.clients import initialize_clients
 from utils.directoryHandler import getRandomID
 from utils.extra import auto_ping_website, convert_class_to_dict, reset_cache_dir
 from utils.streamer import media_streamer
-from utils.uploader import start_file_uploader
+from utils.uploader import start_file_uploader, THUMBNAIL_DIR
 from utils.logger import Logger
 import urllib.parse
 
@@ -375,3 +376,71 @@ async def getFolderShareAuth(request: Request):
         return JSONResponse({"status": "ok", "auth": auth})
     except:
         return JSONResponse({"status": "not found"})
+
+
+# ── Thumbnail Endpoint ──────────────────────────────────────────────────────
+
+@app.get("/thumbnail")
+async def get_thumbnail(file_id: int):
+    """Serve a cached thumbnail by Telegram message ID."""
+    thumb_path = THUMBNAIL_DIR / f"{file_id}.jpg"
+    if thumb_path.exists():
+        return FileResponse(str(thumb_path), media_type="image/jpeg")
+    raise HTTPException(status_code=404, detail="Thumbnail not available")
+
+
+# ── TMDB Proxy Endpoints ────────────────────────────────────────────────────
+
+TMDB_BASE = "https://api.themoviedb.org/3"
+
+
+@app.get("/api/tmdb/search")
+async def tmdb_search(query: str, page: int = 1):
+    if not TMDB_API_KEY:
+        raise HTTPException(status_code=503, detail="TMDB_API_KEY not configured")
+    url = f"{TMDB_BASE}/search/multi"
+    params = {"api_key": TMDB_API_KEY, "query": query, "page": page, "include_adult": "false"}
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url, params=params) as resp:
+            if resp.status != 200:
+                raise HTTPException(status_code=resp.status, detail="TMDB request failed")
+            return JSONResponse(await resp.json())
+
+
+@app.get("/api/tmdb/trending")
+async def tmdb_trending(media_type: str = "all", time_window: str = "week"):
+    if not TMDB_API_KEY:
+        raise HTTPException(status_code=503, detail="TMDB_API_KEY not configured")
+    url = f"{TMDB_BASE}/trending/{media_type}/{time_window}"
+    params = {"api_key": TMDB_API_KEY}
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url, params=params) as resp:
+            if resp.status != 200:
+                raise HTTPException(status_code=resp.status, detail="TMDB request failed")
+            return JSONResponse(await resp.json())
+
+
+@app.get("/api/tmdb/movie/{movie_id}")
+async def tmdb_movie_details(movie_id: int):
+    if not TMDB_API_KEY:
+        raise HTTPException(status_code=503, detail="TMDB_API_KEY not configured")
+    url = f"{TMDB_BASE}/movie/{movie_id}"
+    params = {"api_key": TMDB_API_KEY, "append_to_response": "videos,credits"}
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url, params=params) as resp:
+            if resp.status != 200:
+                raise HTTPException(status_code=resp.status, detail="TMDB request failed")
+            return JSONResponse(await resp.json())
+
+
+@app.get("/api/tmdb/tv/{tv_id}")
+async def tmdb_tv_details(tv_id: int):
+    if not TMDB_API_KEY:
+        raise HTTPException(status_code=503, detail="TMDB_API_KEY not configured")
+    url = f"{TMDB_BASE}/tv/{tv_id}"
+    params = {"api_key": TMDB_API_KEY, "append_to_response": "videos,credits"}
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url, params=params) as resp:
+            if resp.status != 200:
+                raise HTTPException(status_code=resp.status, detail="TMDB request failed")
+            return JSONResponse(await resp.json())
