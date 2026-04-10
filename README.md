@@ -9,7 +9,7 @@ pinned: false
 
 # TGDrive - A Google Drive Clone with Telegram Storage
 
-Welcome to TGDrive! This web application replicates Google Drive's functionalities using Telegram as its storage backend. Manage folders and files, perform actions like uploading, renaming, and deleting, utilize trash/bin support, enable permanent deletion, and share public links. The application offers admin login and automatically backs up the database to Telegram.
+Welcome to TGDrive! This web application replicates Google Drive's functionalities using Telegram as its storage backend. Manage folders and files, perform actions like uploading, renaming, and deleting, utilize trash/bin support, enable permanent deletion, and share public links. The application offers admin login and automatically backs up the database to Telegram..
 
 **Check out the [TGDrive Personal](https://github.com/TechShreyash/TGDrivePersonal) project for local desktop backup support.**
 
