@@ -24,6 +24,7 @@ async def extract_thumbnail(client: Client, message: Message, file_msg_id: int) 
     if thumb_path.exists():
         return True
     try:
+        # thumb=-1 requests the last (largest available) thumbnail in pyrogram's API
         downloaded = await client.download_media(message, file_name=str(thumb_path), thumb=-1)
         if downloaded and Path(downloaded).exists():
             return True

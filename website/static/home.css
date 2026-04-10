@@ -1540,9 +1540,7 @@ body.dark-mode .card-more-btn img { filter: none; }
     .tmdb-detail-poster-placeholder { min-height: 200px; }
 }
 
-@media (max-width: 480px) {
-    .tmdb-grid { grid-template-columns: repeat(2, 1fr) !important; }
-}
+
 
 /* =========================================================
    TOUCH OPTIMIZATIONS – prevent double-tap zoom on buttons

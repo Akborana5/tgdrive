@@ -382,8 +382,15 @@ async def getFolderShareAuth(request: Request):
 
 @app.get("/thumbnail")
 async def get_thumbnail(file_id: int):
-    """Serve a cached thumbnail by Telegram message ID."""
-    thumb_path = THUMBNAIL_DIR / f"{file_id}.jpg"
+    """Serve a cached thumbnail by Telegram message ID.
+    file_id must be a positive integer (Telegram message ID)."""
+    if file_id <= 0:
+        raise HTTPException(status_code=400, detail="Invalid file_id")
+    # Use a safe integer-only filename to prevent path traversal
+    thumb_path = (THUMBNAIL_DIR / f"{int(file_id)}.jpg").resolve()
+    # Ensure the resolved path is still inside THUMBNAIL_DIR
+    if not str(thumb_path).startswith(str(THUMBNAIL_DIR.resolve())):
+        raise HTTPException(status_code=400, detail="Invalid file_id")
     if thumb_path.exists():
         return FileResponse(str(thumb_path), media_type="image/jpeg")
     raise HTTPException(status_code=404, detail="Thumbnail not available")
@@ -398,8 +405,10 @@ TMDB_BASE = "https://api.themoviedb.org/3"
 async def tmdb_search(query: str, page: int = 1):
     if not TMDB_API_KEY:
         raise HTTPException(status_code=503, detail="TMDB_API_KEY not configured")
+    if not query or len(query) > 200:
+        raise HTTPException(status_code=400, detail="Invalid query")
     url = f"{TMDB_BASE}/search/multi"
-    params = {"api_key": TMDB_API_KEY, "query": query, "page": page, "include_adult": "false"}
+    params = {"api_key": TMDB_API_KEY, "query": query[:200], "page": page, "include_adult": "false"}
     async with aiohttp.ClientSession() as session:
         async with session.get(url, params=params) as resp:
             if resp.status != 200:

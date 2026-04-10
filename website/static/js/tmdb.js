@@ -112,7 +112,7 @@ function tmdbRenderGrid(items) {
             ? `<img class="tmdb-card-poster" src="${TMDB_IMG_BASE}${item.poster_path}" alt="${escapeHtml(title)}" loading="lazy" />`
             : `<div class="tmdb-card-poster-placeholder">${mediaType === 'tv' ? '📺' : '🎬'}</div>`;
 
-        return `<div class="tmdb-card" data-id="${item.id}" data-type="${mediaType}" onclick="tmdbOpenDetail(${item.id}, '${mediaType}')">
+        return `<div class="tmdb-card" data-id="${item.id}" data-type="${escapeHtml(mediaType)}">
             ${poster}
             <div class="tmdb-card-body">
                 <p class="tmdb-card-title" title="${escapeHtml(title)}">${escapeHtml(title)}</p>
@@ -179,13 +179,21 @@ function tmdbRenderDetail(data, mediaType) {
             <p class="tmdb-detail-overview">${escapeHtml(overview)}</p>
             ${director ? `<div class="tmdb-cast-row"><strong>Director:</strong> ${escapeHtml(director.name)}</div>` : ''}
             ${cast ? `<div class="tmdb-cast-row"><strong>Cast:</strong> ${cast}</div>` : ''}
-            ${trailerKey
-                ? `<button class="tmdb-trailer-btn" onclick="tmdbPlayTrailer('${trailerKey}')">
+            ${trailerKey && /^[A-Za-z0-9_-]{6,20}$/.test(trailerKey)
+                ? `<button class="tmdb-trailer-btn" data-trailer-key="${escapeHtml(trailerKey)}">
                     ▶ Watch Trailer
                 </button>`
                 : `<span style="font-size:0.85rem;color:var(--text-muted)">No trailer available</span>`
             }
         </div>`;
+
+    // Attach trailer button listener after rendering (avoids inline onclick)
+    const trailerBtn = content.querySelector('.tmdb-trailer-btn');
+    if (trailerBtn) {
+        trailerBtn.addEventListener('click', () => {
+            tmdbPlayTrailer(trailerBtn.dataset.trailerKey);
+        });
+    }
 }
 
 function findTrailerKey(videos) {
@@ -240,6 +248,17 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     document.getElementById('tmdb-detail')?.addEventListener('click', function(e) {
         if (e.target === this) this.classList.remove('open');
+    });
+
+    // Card click via event delegation (avoids inline onclick on each card)
+    document.getElementById('tmdb-grid')?.addEventListener('click', e => {
+        const card = e.target.closest('.tmdb-card');
+        if (!card) return;
+        const id = parseInt(card.dataset.id, 10);
+        const mediaType = card.dataset.type;
+        if (id && (mediaType === 'movie' || mediaType === 'tv')) {
+            tmdbOpenDetail(id, mediaType);
+        }
     });
 
     // Tabs

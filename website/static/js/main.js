@@ -252,9 +252,10 @@ function renderGridView(sorted, isTrash) {
             // Build thumbnail html: use real thumbnail if available, else colored gradient
             let thumbHtml;
             if (item.file_id) {
-                thumbHtml = `<div class="card-thumb file-thumb type-${fileType}" style="padding:0;overflow:hidden">
+                thumbHtml = `<div class="card-thumb file-thumb type-${fileType}" style="padding:0;overflow:hidden"
+                         data-fallback-emoji="${emoji}" data-fallback-ext="${ext}">
                     <img src="/thumbnail?file_id=${item.file_id}" class="card-thumb-img" loading="lazy"
-                         onerror="this.parentElement.innerHTML='<span class=\"card-file-emoji\">${emoji}</span><span class=\"card-ext\">${ext}</span>';this.parentElement.style.display='flex';this.parentElement.style.alignItems='center';this.parentElement.style.justifyContent='center';this.parentElement.style.flexDirection='column';" />
+                         data-fallback-type="${fileType}" />
                 </div>`;
             } else {
                 thumbHtml = `<div class="card-thumb file-thumb type-${fileType}">
