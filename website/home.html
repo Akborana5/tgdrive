@@ -5,297 +5,213 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>TG Drive</title>
-    <link rel="stylesheet" href="static/home.css?v=2" />
-
+    <link rel="stylesheet" href="static/home.css?v=3" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-        href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap"
-        rel="stylesheet" />
-    <style>
-        /* --- SORTING STYLES --- */
-        .sort-icon { font-size: 12px; margin-left: 5px; opacity: 0.6; }
-        th.sortable { cursor: pointer; user-select: none; }
-        th.sortable:hover { background-color: rgba(0,0,0,0.05); }
-
-        /* --- MOBILE & ANDROID RESPONSIVENESS --- */
-        @media (max-width: 768px) {
-            /* 1. Layout Adjustments */
-            .sidebar {
-                position: fixed;
-                left: -280px; /* Hide by default */
-                top: 0;
-                height: 100%;
-                z-index: 1001;
-                background: white;
-                transition: left 0.3s ease;
-                box-shadow: 2px 0 5px rgba(0,0,0,0.2);
-            }
-            .sidebar.active { left: 0; }
-            
-            /* Overlay when sidebar is open */
-            .mobile-overlay {
-                display: none;
-                position: fixed;
-                top: 0; left: 0; right: 0; bottom: 0;
-                background: rgba(0,0,0,0.5);
-                z-index: 1000;
-            }
-            .mobile-overlay.active { display: block; }
-
-            /* 2. Header Improvements */
-            .main-content { margin-left: 0 !important; width: 100%; }
-            .header { padding: 10px; gap: 10px; }
-            .search-bar { width: 100%; }
-            #file-search { width: 100%; font-size: 16px; } /* Prevents zoom on focus */
-
-            /* 3. Table / File List Improvements */
-            .directory { 
-                padding: 0; 
-                overflow-x: hidden; 
-            }
-            table { 
-                width: 100%; 
-                display: table;
-            }
-            th, td { 
-                padding: 12px 10px; 
-                font-size: 14px; 
-            }
-            
-            /* Hide File Size on very small screens to save space if needed */
-            /* th:nth-child(2), td:nth-child(2) { display: none; } */
-
-            /* Make "More" button bigger for touch */
-            td:last-child { text-align: right; }
-            
-            /* 4. Floating Action Button (FAB) for "New" */
-            /* This mimics the Android generic "Plus" button */
-            .new-button-mobile {
-                position: fixed;
-                bottom: 24px;
-                right: 24px;
-                width: 56px;
-                height: 56px;
-                border-radius: 50%;
-                background: white;
-                box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                z-index: 999;
-                font-size: 24px;
-                border: none;
-            }
-        }
-        
-        /* Hide Mobile FAB on Desktop */
-        @media (min-width: 769px) {
-            .new-button-mobile { display: none; }
-        }
-    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 </head>
 
 <body>
+    <!-- Top Loading Bar -->
+    <div id="top-progress-bar"></div>
+
+    <!-- Mobile Overlay -->
     <div id="mobile-overlay" class="mobile-overlay"></div>
 
     <div class="container">
+        <!-- ===== SIDEBAR ===== -->
         <div class="sidebar" id="sidebar">
             <div class="sidebar-header">
-                <img src="https://ssl.gstatic.com/images/branding/product/1x/drive_2020q4_48dp.png" />
+                <img src="https://ssl.gstatic.com/images/branding/product/1x/drive_2020q4_48dp.png" alt="TG Drive" />
                 <span>TG Drive</span>
             </div>
 
             <button id="new-button" class="new-button">
-                <img src="static/assets/plus-icon.svg" />New
+                <img src="static/assets/plus-icon.svg" alt="New" />
+                New
             </button>
 
             <div id="new-upload" class="new-upload">
-                <input id="new-upload-focus" type="text"
-                    style="height: 0px; width: 0px; border: none; position: absolute" readonly />
+                <input id="new-upload-focus" type="text" style="height:0;width:0;border:none;position:absolute" readonly />
                 <div id="new-folder-btn">
-                    <img src="static/assets/folder-icon.svg" />
+                    <img src="static/assets/folder-icon.svg" alt="Folder" />
                     New Folder
                 </div>
                 <hr />
                 <div id="file-upload-btn">
-                    <img src="static/assets/upload-icon.svg" />
+                    <img src="static/assets/upload-icon.svg" alt="Upload" />
                     File Upload
                 </div>
-                <input type="file" id="fileInput" style="height: 0px; width: 0px; border: none; position: absolute" />
+                <input type="file" id="fileInput" style="height:0;width:0;border:none;position:absolute" />
                 <hr />
                 <div id="url-upload-btn">
-                    <img src="static/assets/link-icon.svg" />
+                    <img src="static/assets/link-icon.svg" alt="URL" />
                     URL Upload
                 </div>
             </div>
 
             <div class="sidebar-menu">
-                <a class="selected-item" href="/?path=/"><img src="static/assets/home-icon.svg" />Home</a>
-                <a class="unselected-item" href="/?path=/trash"><img src="static/assets/trash-icon.svg" />Trash</a>
+                <a class="selected-item" href="/?path=/"><img src="static/assets/home-icon.svg" alt="Home" />Home</a>
+                <a class="unselected-item" href="/?path=/trash"><img src="static/assets/trash-icon.svg" alt="Trash" />Trash</a>
             </div>
         </div>
+
+        <!-- BG Blur Overlay -->
         <div id="bg-blur" class="bg-blur"></div>
 
-        <div id="create-new-folder" class="create-new-folder">
-            <span>New Folder</span>
+        <!-- ===== MODALS ===== -->
+        <div id="create-new-folder" class="modal-card">
+            <span class="modal-title">New Folder</span>
             <input type="text" id="new-folder-name" placeholder="Enter Folder Name" autocomplete="off" />
-            <div>
-                <button id="new-folder-cancel">Cancel</button>
-                <button id="new-folder-create">Create</button>
+            <div class="modal-actions">
+                <button id="new-folder-cancel" class="btn-ghost">Cancel</button>
+                <button id="new-folder-create" class="btn-primary">Create</button>
             </div>
         </div>
-        <div id="rename-file-folder" class="create-new-folder">
-            <span>Edit File/Folder Name</span>
-            <input type="text" id="rename-name" placeholder="Enter File/Folder Name" autocomplete="off" />
-            <div>
-                <button id="rename-cancel">Cancel</button>
-                <button id="rename-create">Rename</button>
+
+        <div id="rename-file-folder" class="modal-card">
+            <span class="modal-title">Rename</span>
+            <input type="text" id="rename-name" placeholder="Enter New Name" autocomplete="off" />
+            <div class="modal-actions">
+                <button id="rename-cancel" class="btn-ghost">Cancel</button>
+                <button id="rename-create" class="btn-primary">Rename</button>
             </div>
         </div>
-        <div id="new-url-upload" class="create-new-folder">
-            <span>Url Upload</span>
-            <input type="text" id="remote-url" placeholder="Enter Direct Download Link Of File" autocomplete="off" />
+
+        <div id="new-url-upload" class="modal-card">
+            <span class="modal-title">URL Upload</span>
+            <input type="text" id="remote-url" placeholder="Enter Direct Download URL" autocomplete="off" />
             <div id="single-threaded-div">
-                <input type="checkbox" name="single-threaded-toggle" id="single-threaded-toggle">
+                <input type="checkbox" name="single-threaded-toggle" id="single-threaded-toggle" />
                 <label for="single-threaded-toggle">Single Threaded</label>
-                <a href="#"><img src="static/assets/info-icon-small.svg" alt="Info"></a>
+                <a href="#"><img src="static/assets/info-icon-small.svg" alt="Info" /></a>
             </div>
-            <div>
-                <button id="remote-cancel">Cancel</button>
-                <button id="remote-start">Upload</button>
-            </div>
-        </div>
-        <div id="get-password" class="create-new-folder">
-            <span>Admin Login</span>
-            <input type="text" id="auth-pass" placeholder="Enter Password" autocomplete="off" />
-            <div>
-                <button id="pass-login">Login</button>
+            <div class="modal-actions">
+                <button id="remote-cancel" class="btn-ghost">Cancel</button>
+                <button id="remote-start" class="btn-primary">Upload</button>
             </div>
         </div>
-        <div id="file-uploader" class="file-uploader">
-            <span class="upload-head">🚀 Uploading File...</span>
-            <span id="upload-filename" class="upload-info">Filename : </span>
-            <span id="upload-filesize" class="upload-info">Filesize :</span>
-            <span id="upload-status" class="upload-info">Status : </span>
-            <span id="upload-percent" class="upload-info">Progress : </span>
-            <div class="progress">
+
+        <div id="get-password" class="modal-card">
+            <span class="modal-title">Admin Login</span>
+            <input type="password" id="auth-pass" placeholder="Enter Password" autocomplete="off" />
+            <div class="modal-actions">
+                <button id="pass-login" class="btn-primary">Login</button>
+            </div>
+        </div>
+
+        <!-- File Uploader Progress Modal -->
+        <div id="file-uploader" class="modal-card file-uploader-modal">
+            <span class="upload-head">🚀 Uploading...</span>
+            <span id="upload-filename" class="upload-info">Filename:</span>
+            <span id="upload-filesize" class="upload-info">Size:</span>
+            <span id="upload-status" class="upload-info">Status:</span>
+            <span id="upload-percent" class="upload-info">Progress:</span>
+            <div class="progress-track">
                 <div class="progress-bar" id="progress-bar"></div>
             </div>
-            <div class="btn-div">
-                <button id="cancel-file-upload">Cancel Upload</button>
+            <div class="modal-actions">
+                <button id="cancel-file-upload" class="btn-ghost">Cancel Upload</button>
             </div>
         </div>
+
+        <!-- ===== MAIN CONTENT ===== -->
         <div class="main-content">
+            <!-- Header -->
             <div class="header">
-                <button id="sidebar-toggle-btn" class="theme-toggle-btn" title="Toggle Sidebar" style="margin-right: 10px; cursor: pointer;">
-                    <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24" fill="#444746">
+                <button id="sidebar-toggle-btn" class="icon-btn" title="Toggle Sidebar">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 0 24 24" width="20">
                         <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z" />
                     </svg>
                 </button>
-                
-                <div class="search-bar" style="display: flex; flex-grow: 1;">
-                    <img src="static/assets/search-icon.svg" />
-                    <form id="search-form" style="flex-grow: 1;">
-                        <input id="file-search" type="text" placeholder="Search in Drive" autocomplete="off" />
+
+                <div class="search-bar">
+                    <img src="static/assets/search-icon.svg" alt="Search" />
+                    <form id="search-form">
+                        <input id="file-search" type="text" placeholder="Search files &amp; folders…" autocomplete="off" />
                     </form>
                 </div>
-                
-                <button id="theme-toggle-btn" class="theme-toggle-btn" title="Toggle Theme">
-                    <svg id="theme-icon" xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24" fill="#444746">
+
+                <button id="theme-toggle-btn" class="icon-btn" title="Toggle Theme">
+                    <svg id="theme-icon" xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 0 24 24" width="20">
                         <path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-2.98 0-5.4-2.42-5.4-5.4 0-1.81.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z" />
                     </svg>
                 </button>
             </div>
 
-            <div class="directory">
-                <table>
+            <!-- Toolbar -->
+            <div class="toolbar" id="toolbar">
+                <div class="toolbar-left">
+                    <div class="sort-group">
+                        <span class="sort-label">Sort</span>
+                        <select id="sort-field" class="sort-select">
+                            <option value="date">Date</option>
+                            <option value="name">Name</option>
+                            <option value="size">Size</option>
+                        </select>
+                        <button id="sort-dir-btn" class="sort-dir-btn" title="Ascending">
+                            <svg xmlns="http://www.w3.org/2000/svg" height="16" viewBox="0 0 24 24" width="16">
+                                <path d="M7 14l5-5 5 5z" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="toolbar-right">
+                    <div class="view-group">
+                        <button id="list-view-btn" class="view-btn active" title="List View">
+                            <svg xmlns="http://www.w3.org/2000/svg" height="18" viewBox="0 0 24 24" width="18">
+                                <path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z" />
+                            </svg>
+                        </button>
+                        <button id="grid-view-btn" class="view-btn" title="Grid View">
+                            <svg xmlns="http://www.w3.org/2000/svg" height="18" viewBox="0 0 24 24" width="18">
+                                <path d="M3 3v8h8V3H3zm6 6H5V5h4v4zm-6 4v8h8v-8H3zm6 6H5v-4h4v4zm4-16v8h8V3h-8zm6 6h-4V5h4v4zm-6 4v8h8v-8h-8zm6 6h-4v-4h4v4z" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Directory Container -->
+            <div class="directory-container" id="directory-container">
+                <!-- Skeleton Loader -->
+                <div id="skeleton-container"></div>
+
+                <!-- List View -->
+                <table id="list-view" class="list-table">
                     <thead>
                         <tr>
-                            <th class="sortable" onclick="sortTable(0)">Name <span class="sort-icon">⇅</span></th>
-                            <th class="sortable" onclick="sortTable(1)">File Size <span class="sort-icon">⇅</span></th>
-                            <th>More</th>
+                            <th>Name</th>
+                            <th>Size</th>
+                            <th class="date-col">Date</th>
+                            <th class="more-col"></th>
                         </tr>
                     </thead>
                     <tbody id="directory-data"></tbody>
                 </table>
+
+                <!-- Grid View -->
+                <div id="grid-view" class="grid-container" style="display:none"></div>
             </div>
         </div>
     </div>
-    
-    <button class="new-button-mobile" onclick="document.getElementById('new-button').click()">
-        <img src="static/assets/plus-icon.svg" />
+
+    <!-- Mobile FAB -->
+    <button class="fab-btn" id="fab-btn" title="New">
+        <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24">
+            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+        </svg>
     </button>
 
-    <script src="static/js/extra.js?v=2"></script>
-    <script src="static/js/apiHandler.js?v=2"></script>
-    <script src="static/js/sidebar.js?v=2"></script>
-    <script src="static/js/fileClickHandler.js?v=2"></script>
-    <script src="static/js/main.js?v=2"></script>
+    <!-- More Options Portal (absolutely positioned dropdowns render here) -->
+    <div id="more-options-portal"></div>
 
-    <script>
-        // --- 1. Sorting Logic ---
-        let sortDirection = 1; // 1 for asc, -1 for desc
-
-        function sortTable(n) {
-            const tableBody = document.getElementById("directory-data");
-            const rows = Array.from(tableBody.rows);
-            
-            sortDirection *= -1; // Toggle direction
-
-            rows.sort((a, b) => {
-                let x = a.getElementsByTagName("TD")[n].innerText.trim();
-                let y = b.getElementsByTagName("TD")[n].innerText.trim();
-
-                // If sorting File Size (Column 1)
-                if (n === 1) {
-                    return (parseSize(x) - parseSize(y)) * sortDirection;
-                }
-
-                // Default Name sorting
-                return x.toLowerCase().localeCompare(y.toLowerCase()) * sortDirection;
-            });
-
-            // Re-append rows in new order
-            rows.forEach(row => tableBody.appendChild(row));
-        }
-
-        // Helper to convert "10 MB", "2 KB" to bytes
-        function parseSize(sizeStr) {
-            if (!sizeStr || sizeStr === '-') return 0;
-            const units = {'B': 1, 'KB': 1024, 'MB': 1024**2, 'GB': 1024**3, 'TB': 1024**4};
-            const match = sizeStr.match(/([\d.]+)\s*([a-zA-Z]+)/);
-            if (!match) return 0;
-            return parseFloat(match[1]) * (units[match[2].toUpperCase()] || 1);
-        }
-
-        // --- 2. Mobile Sidebar Logic ---
-        const sidebar = document.querySelector('.sidebar');
-        const overlay = document.getElementById('mobile-overlay');
-        const toggleBtn = document.getElementById('sidebar-toggle-btn');
-
-        toggleBtn.addEventListener('click', (e) => {
-            e.stopPropagation(); // Prevent immediate close
-            sidebar.classList.toggle('active');
-            overlay.classList.toggle('active');
-        });
-
-        // Close sidebar when clicking outside
-        overlay.addEventListener('click', () => {
-            sidebar.classList.remove('active');
-            overlay.classList.remove('active');
-        });
-        
-        // Close sidebar on small screens when a menu item is clicked
-        document.querySelectorAll('.sidebar-menu a').forEach(link => {
-            link.addEventListener('click', () => {
-                if (window.innerWidth <= 768) {
-                    sidebar.classList.remove('active');
-                    overlay.classList.remove('active');
-                }
-            });
-        });
-    </script>
+    <!-- Scripts -->
+    <script src="static/js/extra.js?v=3"></script>
+    <script src="static/js/apiHandler.js?v=3"></script>
+    <script src="static/js/sidebar.js?v=3"></script>
+    <script src="static/js/fileClickHandler.js?v=3"></script>
+    <script src="static/js/main.js?v=3"></script>
 </body>
 
 </html>

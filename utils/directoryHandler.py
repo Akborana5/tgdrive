@@ -53,6 +53,7 @@ class File:
         size: int,
         path: str,
     ) -> None:
+        import mimetypes as _mt
         self.name = name
         self.file_id = file_id
         self.id = getRandomID()
@@ -61,6 +62,7 @@ class File:
         self.trash = False
         self.path = path[:-1] if path[-1] == "/" else path
         self.upload_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        self.mime_type = _mt.guess_type(name)[0] or "application/octet-stream"
 
 
 class NewDriveData:
@@ -317,9 +319,9 @@ async def backup_drive_data(loop=True):
             logger.error(f"Backup Error: {e}")
             await asyncio.sleep(10)
 
-
 async def init_drive_data():
     global DRIVE_DATA
+    import mimetypes as _mt
 
     logger.info("Initializing drive data.")
     root_dir = DRIVE_DATA.get_directory("/")
@@ -333,6 +335,9 @@ async def init_drive_data():
 
                 if not hasattr(item, "auth_hashes"):
                     item.auth_hashes = []
+            elif item.type == "file":
+                if not hasattr(item, "mime_type"):
+                    item.mime_type = _mt.guess_type(item.name)[0] or "application/octet-stream"
 
     traverse_directory(root_dir)
     DRIVE_DATA.save()

@@ -36,6 +36,7 @@ def convert_class_to_dict(data, isObject, showtrash=False):
                     "id": file.id,
                     "path": file.path,
                     "upload_date": file.upload_date,
+                    "mime_type": getattr(file, "mime_type", "application/octet-stream"),
                 }
     return new_data
 
