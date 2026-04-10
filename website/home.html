@@ -5,7 +5,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>TG Drive</title>
-    <link rel="stylesheet" href="static/home.css?v=3" />
+    <link rel="stylesheet" href="static/home.css?v=4" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
@@ -53,6 +53,12 @@
             <div class="sidebar-menu">
                 <a class="selected-item" href="/?path=/"><img src="static/assets/home-icon.svg" alt="Home" />Home</a>
                 <a class="unselected-item" href="/?path=/trash"><img src="static/assets/trash-icon.svg" alt="Trash" />Trash</a>
+                <a class="unselected-item" id="tmdb-sidebar-btn" href="#" onclick="openTmdbPanel(); return false;">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="18" viewBox="0 0 24 24" width="18" style="flex-shrink:0" fill="currentColor">
+                        <path d="M18 3v2h-2V3H8v2H6V3H4v18h2v-2h2v2h8v-2h2v2h2V3h-2zM8 17H6v-2h2v2zm0-4H6v-2h2v2zm0-4H6V7h2v2zm10 8h-2v-2h2v2zm0-4h-2v-2h2v2zm0-4h-2V7h2v2z"/>
+                    </svg>
+                    Movies / IMDB
+                </a>
             </div>
         </div>
 
@@ -113,6 +119,53 @@
             <div class="modal-actions">
                 <button id="cancel-file-upload" class="btn-ghost">Cancel Upload</button>
             </div>
+        </div>
+
+        <!-- ===== TMDB PANEL ===== -->
+        <div id="tmdb-panel" class="tmdb-panel">
+            <div class="tmdb-panel-header">
+                <div class="tmdb-panel-title">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="22" viewBox="0 0 24 24" width="22" fill="currentColor">
+                        <path d="M18 3v2h-2V3H8v2H6V3H4v18h2v-2h2v2h8v-2h2v2h2V3h-2zM8 17H6v-2h2v2zm0-4H6v-2h2v2zm0-4H6V7h2v2zm10 8h-2v-2h2v2zm0-4h-2v-2h2v2zm0-4h-2V7h2v2z"/>
+                    </svg>
+                    Movies &amp; TV Shows
+                </div>
+                <button id="tmdb-close-btn" class="icon-btn" title="Close">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 0 24 24" width="20">
+                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="tmdb-search-bar">
+                <svg xmlns="http://www.w3.org/2000/svg" height="18" viewBox="0 0 24 24" width="18" fill="currentColor" style="opacity:0.5;flex-shrink:0">
+                    <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+                </svg>
+                <input type="text" id="tmdb-search-input" placeholder="Search movies, TV shows, series…" autocomplete="off" />
+                <button id="tmdb-search-btn" class="btn-primary" style="padding:7px 16px;font-size:0.85rem">Search</button>
+            </div>
+            <div class="tmdb-tabs">
+                <button class="tmdb-tab active" data-tab="trending">🔥 Trending</button>
+                <button class="tmdb-tab" data-tab="movies">🎬 Movies</button>
+                <button class="tmdb-tab" data-tab="tv">📺 TV Shows</button>
+                <button class="tmdb-tab" data-tab="search" id="tmdb-search-tab" style="display:none">🔍 Results</button>
+            </div>
+            <div id="tmdb-content" class="tmdb-content">
+                <div id="tmdb-loader" class="tmdb-loader">
+                    <div class="tmdb-spinner"></div>
+                    <p>Loading…</p>
+                </div>
+                <div id="tmdb-grid" class="tmdb-grid"></div>
+            </div>
+        </div>
+
+        <!-- TMDB Detail Modal -->
+        <div id="tmdb-detail" class="tmdb-detail-modal">
+            <button id="tmdb-detail-close" class="tmdb-detail-close">
+                <svg xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 0 24 24" width="20" fill="currentColor">
+                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                </svg>
+            </button>
+            <div id="tmdb-detail-content" class="tmdb-detail-content"></div>
         </div>
 
         <!-- ===== MAIN CONTENT ===== -->
@@ -207,11 +260,12 @@
     <div id="more-options-portal"></div>
 
     <!-- Scripts -->
-    <script src="static/js/extra.js?v=3"></script>
-    <script src="static/js/apiHandler.js?v=3"></script>
-    <script src="static/js/sidebar.js?v=3"></script>
-    <script src="static/js/fileClickHandler.js?v=3"></script>
-    <script src="static/js/main.js?v=3"></script>
+    <script src="static/js/extra.js?v=4"></script>
+    <script src="static/js/apiHandler.js?v=4"></script>
+    <script src="static/js/sidebar.js?v=4"></script>
+    <script src="static/js/fileClickHandler.js?v=4"></script>
+    <script src="static/js/main.js?v=4"></script>
+    <script src="static/js/tmdb.js?v=4"></script>
 </body>
 
 </html>

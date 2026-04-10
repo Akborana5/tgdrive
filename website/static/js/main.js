@@ -249,11 +249,22 @@ function renderGridView(sorted, isTrash) {
             const fileType = getFileType(item.name);
             const emoji    = getFileEmoji(fileType);
             const ext      = (item.name.split('.').pop() || '').toUpperCase().slice(0, 6);
-            html += `<div class="grid-card file-card" data-path="${item.path}" data-id="${item.id}" data-name="${item.name}">
-                <div class="card-thumb file-thumb type-${fileType}">
+            // Build thumbnail html: use real thumbnail if available, else colored gradient
+            let thumbHtml;
+            if (item.file_id) {
+                thumbHtml = `<div class="card-thumb file-thumb type-${fileType}" style="padding:0;overflow:hidden"
+                         data-fallback-emoji="${emoji}" data-fallback-ext="${ext}">
+                    <img src="/thumbnail?file_id=${item.file_id}" class="card-thumb-img" loading="lazy"
+                         data-fallback-type="${fileType}" />
+                </div>`;
+            } else {
+                thumbHtml = `<div class="card-thumb file-thumb type-${fileType}">
                     <span class="card-file-emoji">${emoji}</span>
                     <span class="card-ext">${ext}</span>
-                </div>
+                </div>`;
+            }
+            html += `<div class="grid-card file-card" data-path="${item.path}" data-id="${item.id}" data-name="${item.name}">
+                ${thumbHtml}
                 <div class="card-body">
                     <p class="card-name" title="${item.name}">${item.name}</p>
                     <p class="card-meta">${size} · ${formatDate(item.upload_date)}</p>
@@ -267,15 +278,35 @@ function renderGridView(sorted, isTrash) {
     if (gridV) gridV.innerHTML = html;
 }
 
+// ── Touch device detection ───────────────────────────────
+const isTouchDevice = () => window.matchMedia('(hover: none)').matches;
+
 // ── Attach event listeners ────────────────────────────────
 function attachEventListeners(isTrash) {
     if (!isTrash) {
-        document.querySelectorAll('.folder-tr, .folder-card').forEach(el => {
-            el.ondblclick = openFolder;
-        });
-        document.querySelectorAll('.file-tr, .file-card').forEach(el => {
-            el.ondblclick = openFile;
-        });
+        if (isTouchDevice()) {
+            // Single-tap on mobile/touch devices
+            document.querySelectorAll('.folder-tr, .folder-card').forEach(el => {
+                el.onclick = function(e) {
+                    if (e.target.closest('.more-btn')) return;
+                    openFolder.call(this, e);
+                };
+            });
+            document.querySelectorAll('.file-tr, .file-card').forEach(el => {
+                el.onclick = function(e) {
+                    if (e.target.closest('.more-btn')) return;
+                    openFile.call(this, e);
+                };
+            });
+        } else {
+            // Double-click on desktop
+            document.querySelectorAll('.folder-tr, .folder-card').forEach(el => {
+                el.ondblclick = openFolder;
+            });
+            document.querySelectorAll('.file-tr, .file-card').forEach(el => {
+                el.ondblclick = openFile;
+            });
+        }
     }
 
     document.querySelectorAll('.more-btn').forEach(btn => {
