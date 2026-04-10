@@ -117,3 +117,88 @@ function removeSlash(text) {
     let trimmedStr = text.replace(new RegExp(`^${charactersToRemove}|${charactersToRemove}$`, 'g'), '');
     return trimmedStr;
 }
+
+// ── Refresh Thumbnails Modal ────────────────────────────────────────────────
+
+function openRefreshThumbnailsModal() {
+    document.getElementById('refresh-thumb-progress-wrap').style.display = 'none';
+    document.getElementById('refresh-thumb-start').disabled = false;
+    document.getElementById('refresh-thumb-start').innerText = 'Start';
+    document.getElementById('refresh-thumb-bar').style.width = '0%';
+    document.getElementById('bg-blur').style.zIndex = '2';
+    document.getElementById('bg-blur').style.opacity = '0.1';
+    document.getElementById('refresh-thumbnails-modal').style.zIndex = '3';
+    document.getElementById('refresh-thumbnails-modal').style.opacity = '1';
+}
+
+function closeRefreshThumbnailsModal() {
+    document.getElementById('bg-blur').style.opacity = '0';
+    setTimeout(() => { document.getElementById('bg-blur').style.zIndex = '-1'; }, 300);
+    document.getElementById('refresh-thumbnails-modal').style.opacity = '0';
+    setTimeout(() => { document.getElementById('refresh-thumbnails-modal').style.zIndex = '-1'; }, 300);
+}
+
+document.getElementById('refresh-thumb-cancel').addEventListener('click', closeRefreshThumbnailsModal);
+
+document.getElementById('refresh-thumb-start').addEventListener('click', async () => {
+    const btn = document.getElementById('refresh-thumb-start');
+    btn.disabled = true;
+    btn.innerText = 'Running…';
+    document.getElementById('refresh-thumb-progress-wrap').style.display = 'block';
+    document.getElementById('refresh-thumb-status').innerText = 'Status: Starting…';
+    document.getElementById('refresh-thumb-count').innerText = '0 / 0 processed';
+
+    try {
+        const resp = await postJson('/api/refreshThumbnails', {});
+        if (resp.status === 'Invalid password') {
+            alert('Invalid password. Please log in as admin first.');
+            btn.disabled = false;
+            btn.innerText = 'Start';
+            return;
+        }
+        if (resp.status !== 'ok' && resp.status !== 'already_running') {
+            alert('Error: ' + resp.status);
+            btn.disabled = false;
+            btn.innerText = 'Start';
+            return;
+        }
+    } catch (e) {
+        alert('Failed to start refresh: ' + e);
+        btn.disabled = false;
+        btn.innerText = 'Start';
+        return;
+    }
+
+    // Poll progress
+    const interval = setInterval(async () => {
+        try {
+            const resp = await fetch('/api/refreshThumbnailsProgress');
+            const json = await resp.json();
+            const p = json.progress;
+            const total = p.total || 0;
+            const processed = p.processed || 0;
+            const pct = total > 0 ? Math.round((processed / total) * 100) : 0;
+            document.getElementById('refresh-thumb-bar').style.width = pct + '%';
+            document.getElementById('refresh-thumb-count').innerText =
+                `${processed} / ${total} processed (${p.succeeded || 0} ✓, ${p.failed || 0} ✗)`;
+
+            if (p.status === 'running') {
+                document.getElementById('refresh-thumb-status').innerText = 'Status: Running…';
+            } else if (p.status === 'completed') {
+                clearInterval(interval);
+                document.getElementById('refresh-thumb-status').innerText = 'Status: Completed ✅';
+                document.getElementById('refresh-thumb-bar').style.width = '100%';
+                btn.innerText = 'Done';
+            } else if (p.status === 'failed') {
+                clearInterval(interval);
+                document.getElementById('refresh-thumb-status').innerText = 'Status: Failed ❌';
+                btn.disabled = false;
+                btn.innerText = 'Retry';
+            } else {
+                document.getElementById('refresh-thumb-status').innerText = 'Status: ' + p.status;
+            }
+        } catch (e) {
+            console.error('Error polling thumbnail refresh progress:', e);
+        }
+    }, 2000);
+});

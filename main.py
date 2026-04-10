@@ -14,7 +14,7 @@ from utils.clients import initialize_clients
 from utils.directoryHandler import getRandomID
 from utils.extra import auto_ping_website, convert_class_to_dict, reset_cache_dir
 from utils.streamer import media_streamer
-from utils.uploader import start_file_uploader, THUMBNAIL_DIR
+from utils.uploader import start_file_uploader, THUMBNAIL_DIR, refresh_all_thumbnails
 from utils.logger import Logger
 import urllib.parse
 
@@ -35,6 +35,9 @@ async def lifespan(app: FastAPI):
         await initDriveDataWithoutClients()
         logger.warning("✅ Website is running in OFFLINE MODE - Telegram features are disabled")
         logger.info("✅ Website UI is available - File operations requiring Telegram will show errors")
+    else:
+        # Auto-refresh thumbnails for video files that were uploaded before thumbnail support
+        asyncio.create_task(refresh_all_thumbnails())
 
     # Start the website auto ping task
     asyncio.create_task(auto_ping_website())
@@ -394,6 +397,34 @@ async def get_thumbnail(file_id: int):
     if thumb_path.exists():
         return FileResponse(str(thumb_path), media_type="image/jpeg")
     raise HTTPException(status_code=404, detail="Thumbnail not available")
+
+
+@app.post("/api/refreshThumbnails")
+async def api_refresh_thumbnails(request: Request):
+    """Trigger a background task to backfill thumbnails for all video files."""
+    from utils.uploader import THUMBNAIL_REFRESH_PROGRESS
+    from utils.clients import has_clients
+
+    data = await request.json()
+
+    if data["password"] != ADMIN_PASSWORD:
+        return JSONResponse({"status": "Invalid password"})
+
+    if not has_clients():
+        return JSONResponse({"status": "Telegram clients not available - Service running in offline mode"})
+
+    if THUMBNAIL_REFRESH_PROGRESS["status"] == "running":
+        return JSONResponse({"status": "already_running", "progress": THUMBNAIL_REFRESH_PROGRESS})
+
+    asyncio.create_task(refresh_all_thumbnails())
+    return JSONResponse({"status": "ok", "message": "Thumbnail refresh started"})
+
+
+@app.get("/api/refreshThumbnailsProgress")
+async def api_refresh_thumbnails_progress():
+    """Return the current thumbnail refresh progress."""
+    from utils.uploader import THUMBNAIL_REFRESH_PROGRESS
+    return JSONResponse({"status": "ok", "progress": THUMBNAIL_REFRESH_PROGRESS})
 
 
 # ── TMDB Proxy Endpoints ────────────────────────────────────────────────────

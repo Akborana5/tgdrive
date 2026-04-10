@@ -3,6 +3,7 @@ from pyrogram import Client
 from pyrogram.types import Message
 from pyrogram.errors import AuthKeyDuplicated
 from config import STORAGE_CHANNEL
+import asyncio
 import os
 from pathlib import Path
 from utils.logger import Logger
@@ -11,6 +12,9 @@ from urllib.parse import unquote_plus
 logger = Logger(__name__)
 PROGRESS_CACHE = {}
 STOP_TRANSMISSION = []
+
+# Thumbnail refresh progress tracker
+THUMBNAIL_REFRESH_PROGRESS = {"status": "idle", "processed": 0, "total": 0, "succeeded": 0, "failed": 0}
 
 # Persistent thumbnail directory (outside cache/ so it survives cache resets)
 THUMBNAIL_DIR = Path("./thumbnails")
@@ -128,3 +132,70 @@ async def start_file_uploader(
             os.remove(file_path)
         except Exception as e:
             pass
+
+
+async def refresh_all_thumbnails():
+    """Backfill thumbnails for all video files that don't have a cached thumbnail."""
+    global THUMBNAIL_REFRESH_PROGRESS
+    import config
+    from utils.directoryHandler import DRIVE_DATA
+
+    THUMBNAIL_REFRESH_PROGRESS = {"status": "running", "processed": 0, "total": 0, "succeeded": 0, "failed": 0}
+
+    # Collect all video files that are missing thumbnails
+    video_files = []
+
+    def collect_files(folder):
+        for item in folder.contents.values():
+            if item.type == "folder":
+                collect_files(item)
+            elif item.type == "file":
+                mime = getattr(item, "mime_type", "") or ""
+                if mime.startswith("video/"):
+                    thumb_path = THUMBNAIL_DIR / f"{item.file_id}.jpg"
+                    if not thumb_path.exists():
+                        video_files.append(item)
+
+    try:
+        root = DRIVE_DATA.get_directory("/")
+        collect_files(root)
+    except Exception as e:
+        logger.error(f"Error collecting files for thumbnail refresh: {e}")
+        THUMBNAIL_REFRESH_PROGRESS["status"] = "failed"
+        return
+
+    THUMBNAIL_REFRESH_PROGRESS["total"] = len(video_files)
+    logger.info(f"Refreshing thumbnails for {len(video_files)} video files...")
+
+    try:
+        client = get_client()
+    except Exception as e:
+        logger.error(f"No client available for thumbnail refresh: {e}")
+        THUMBNAIL_REFRESH_PROGRESS["status"] = "failed"
+        return
+
+    for file in video_files:
+        try:
+            msg = await client.get_messages(config.STORAGE_CHANNEL, file.file_id)
+            if msg and not msg.empty:
+                success = await extract_thumbnail(client, msg, file.file_id)
+                if success:
+                    THUMBNAIL_REFRESH_PROGRESS["succeeded"] += 1
+                else:
+                    THUMBNAIL_REFRESH_PROGRESS["failed"] += 1
+            else:
+                THUMBNAIL_REFRESH_PROGRESS["failed"] += 1
+        except Exception as e:
+            logger.info(f"Failed to refresh thumbnail for file_id {file.file_id}: {e}")
+            THUMBNAIL_REFRESH_PROGRESS["failed"] += 1
+        finally:
+            THUMBNAIL_REFRESH_PROGRESS["processed"] += 1
+
+        # Small delay between requests to avoid Telegram rate limits
+        await asyncio.sleep(0.5)
+
+    THUMBNAIL_REFRESH_PROGRESS["status"] = "completed"
+    logger.info(
+        f"Thumbnail refresh completed: {THUMBNAIL_REFRESH_PROGRESS['succeeded']} succeeded, "
+        f"{THUMBNAIL_REFRESH_PROGRESS['failed']} failed out of {len(video_files)} total"
+    )
